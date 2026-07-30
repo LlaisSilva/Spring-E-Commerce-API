@@ -1,47 +1,35 @@
 package com.amigoscode.spring_project1.cart;
 
+import com.amigoscode.spring_project1.cartItem.CartItem;
 import com.amigoscode.spring_project1.cartItem.CartItemResponse;
-import com.amigoscode.spring_project1.category.CategoryResponse;
-import com.amigoscode.spring_project1.product.ProductResponse;
-import org.springframework.stereotype.Component;
+import com.amigoscode.spring_project1.product.ProductMapper;
+import org.mapstruct.Mapper;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@Component
-public class CartMapper {
+@Mapper(componentModel = "spring", uses = ProductMapper.class)
+public interface CartMapper {
 
+    CartItemResponse toItemResponse(CartItem item);
 
-    public CartResponse toResponse(Cart cart){
+    default CartResponse toResponse(Cart cart) {
 
         List<CartItemResponse> items = cart.getItems()
                 .stream()
-                .map(item -> new CartItemResponse(
-                        new ProductResponse(
-                                item.getProduct().getName(),
-                                item.getProduct().getDescription(),
-                                new CategoryResponse(
-                                        item.getProduct().getCategory().getName()
-                                ),
-                                item.getProduct().getPrice(),
-                                item.getProduct().getStock(),
-                                item.getProduct().getImageUrl()
-                        ),
-                        item.getQuantity()
-                ))
+                .map(this::toItemResponse)
                 .toList();
-
 
         BigDecimal total = items.stream()
                 .map(item ->
-                        item.product().price().multiply(BigDecimal.valueOf( item.quantity()))
+                        item.product()
+                                .price()
+                                .multiply(
+                                        BigDecimal.valueOf(item.quantity())
+                                )
                 )
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-
-        return new CartResponse(
-                items,
-                total
-        );
+        return new CartResponse(items, total);
     }
 }
