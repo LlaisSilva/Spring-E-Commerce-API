@@ -51,7 +51,7 @@ class ProductServiceTest {
                 .build();
     }
 
-    // updateStock
+    // UpdateStock
 
 
     @Test
@@ -85,7 +85,7 @@ class ProductServiceTest {
                 .hasMessageContaining("não encontrado");
     }
 
-// deleteProduct
+// DeleteProduct
 
     @Test
     void shouldDeleteProductWhenIdExists() {
@@ -106,7 +106,7 @@ class ProductServiceTest {
         verify(productRepository, never()).deleteById(anyInt());
     }
 
-// register
+// Register
 
     @Test
     void shouldThrowExceptionWhenRegisteringWithNonExistentCategory() {

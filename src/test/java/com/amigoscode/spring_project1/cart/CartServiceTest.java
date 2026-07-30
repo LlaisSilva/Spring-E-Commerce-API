@@ -67,7 +67,7 @@ class CartServiceTest {
                 .build();
     }
 
-    //  addProduct
+    //  AddProduct
 
     @Test
     void shouldAddNewProductToCart() {
@@ -120,7 +120,7 @@ class CartServiceTest {
                 .hasMessageContaining("Produto não encontrado");
     }
 
-    //updateQuantity
+    // UpdateQuantity
 
     @Test
     void shouldUpdateQuantityOfExistingCartItem() {

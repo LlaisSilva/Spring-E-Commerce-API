@@ -76,7 +76,7 @@ class OrderServiceTest {
                 .build();
     }
 
-    // checkout
+    // Checkout
 
     @Test
     void shouldCheckoutWhenStockIsSufficient() {
@@ -84,11 +84,11 @@ class OrderServiceTest {
 
         orderService.checkout(userDetails);
 
-        // estoque tinha 10, comprou 3 -> deve sobrar 7
+        // Stock had 10, 3 were purchased  -> 7 should remain in stock
         assertThat(product.getStock()).isEqualTo(7);
         verify(productRepository).save(product);
         verify(orderRepository).save(any(Order.class));
-        // o carrinho deve ser esvaziado após o checkout
+        // The cart must be cleared after checkout
         assertThat(cart.getItems()).isEmpty();
     }
 
@@ -97,7 +97,7 @@ class OrderServiceTest {
         CartItem cartItemGrande = CartItem.builder()
                 .id(2)
                 .product(product)
-                .quantity(999) //Greater than the available stock (10)
+                .quantity(999) // Greater than the available stock (10)
                 .build();
         cart.setItems(new ArrayList<>(List.of(cartItemGrande)));
 
@@ -124,10 +124,10 @@ class OrderServiceTest {
         verify(orderRepository, never()).save(any());
     }
 
-    //  cancelOrder
+    //  CancelOrder
 
     @Test
-    void deveCancelarPedidoEDevolverEstoque() {
+    void shouldCancelOrderAndReturnStock() {
         OrderItem orderItem = OrderItem.builder()
                 .product(product)
                 .quantity(4)
@@ -173,11 +173,11 @@ class OrderServiceTest {
 
     @Test
     void shouldThrowExceptionWhenCancellingOrderBelongingToAnotherUser() {
-        User outroUsuario = User.builder().id(999).email("outro@email.com").role(Role.USER).build();
+        User otherUser = User.builder().id(999).email("outro@email.com").role(Role.USER).build();
 
         Order order = Order.builder()
                 .id(10)
-                .user(outroUsuario) // The order belongs to another user
+                .user(otherUser) // The order belongs to another user
                 .status(OrderStatus.PENDING)
                 .items(List.of())
                 .build();
@@ -188,7 +188,9 @@ class OrderServiceTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("não pertence");
     }
-    //getOrderById
+
+    //GetOrderById
+
     @Test
     void shouldSearchOrderWhenBelongsToUser() {
         Order order = Order.builder()
@@ -202,17 +204,17 @@ class OrderServiceTest {
 
         orderService.getOrderById(userDetails, 10);
 
-        //If it didn't throw, the ownership check passed; confirm that the mapper was called.
+        // If it didn't throw, the ownership check passed; confirm that the mapper was called.
         verify(orderMapper).toResponse(order);
     }
 
     @Test
     void shouldThrowExceptionWhenFetchingAnotherUserOrder() {
-        User outroUsuario = User.builder().id(999).email("outro@email.com").role(Role.USER).build();
+        User otherUser = User.builder().id(999).email("outro@email.com").role(Role.USER).build();
 
         Order order = Order.builder()
                 .id(10)
-                .user(outroUsuario)
+                .user(otherUser)
                 .status(OrderStatus.PENDING)
                 .items(List.of())
                 .build();
