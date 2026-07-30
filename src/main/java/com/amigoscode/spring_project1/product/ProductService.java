@@ -2,8 +2,6 @@ package com.amigoscode.spring_project1.product;
 
 import com.amigoscode.spring_project1.category.Category;
 import com.amigoscode.spring_project1.category.CategoryRepository;
-
-import com.amigoscode.spring_project1.category.CategoryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +18,7 @@ import java.util.List;
 public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
 
     public Product register(ProductRequest request ){
 
@@ -39,46 +38,19 @@ public class ProductService {
     public List<ProductResponse> getAllProducts(){
         return productRepository.findAll()
                 .stream()
-                .map(product->new ProductResponse(
-                        product.getName(),
-                        product.getDescription(),
-                        new CategoryResponse(
-                                product.getCategory().getName()
-                        ),
-                        product.getPrice(),
-                        product.getStock(),
-                        product.getImageUrl()
-                )).toList();
+                .map(productMapper::toResponse).toList();
 
     }
     public List<ProductResponse> getByCategory(int categoryId){
         return productRepository.findByCategory_Id(categoryId)
                 .stream()
-                .map(product -> new ProductResponse(
-                        product.getName(),
-                        product.getDescription(),
-                        new CategoryResponse(
-                                product.getCategory().getName()
-                        ),
-                        product.getPrice(),
-                        product.getStock(),
-                        product.getImageUrl()
-                )).toList();
+                .map(productMapper::toResponse).toList();
     }
     public ProductResponse getProductById(int id){
         Product product = productRepository.findById(id)
                 .orElseThrow(()->new RuntimeException("Id de produto não foi achado") );
-        return new ProductResponse(
-                product.getName(),
-                product.getDescription(),
-                new CategoryResponse(
-                        product.getCategory().getName()
-                ),
-                product.getPrice(),
-                product.getStock(),
-                product.getImageUrl()
 
-                );
+        return productMapper.toResponse(product);
     }
 
     public  Product update(int id, ProductRequest request){
@@ -166,16 +138,7 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return productRepository.findAll(spec, pageable)
-                .map(product -> new ProductResponse(
-                        product.getName(),
-                        product.getDescription(),
-                        new CategoryResponse(
-                                product.getCategory().getName()
-                        ),
-                        product.getPrice(),
-                        product.getStock(),
-                        product.getImageUrl()
-                ));
+                .map(productMapper::toResponse);
     }
 
 }
