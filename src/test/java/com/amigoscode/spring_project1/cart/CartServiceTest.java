@@ -67,6 +67,33 @@ class CartServiceTest {
                 .build();
     }
 
+
+    // GetCart
+
+    @Test
+    void shouldReturnCartWhenUserHasOne(){
+        CartResponse expectedResponse = new CartResponse(List.of(),BigDecimal.ZERO);
+
+        when(cartRepository.findByUserId(1)).thenReturn(Optional.of(cart));
+        when(cartMapper.toResponse(cart)).thenReturn(expectedResponse);
+
+        CartResponse result = cartService.getCart(userDetails);
+
+        assertThat(result).isEqualTo(expectedResponse);
+        verify(cartMapper).toResponse(cart);
+
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserHasNoCart(){
+        when(cartRepository.findByUserId(1)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(()->cartService.getCart(userDetails))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Carrinho não encontrado");
+    }
+
+
     //  AddProduct
 
     @Test
@@ -149,6 +176,45 @@ class CartServiceTest {
         assertThatThrownBy(() -> cartService.updateQuantity(userDetails, 1, 5))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("não está no carrinho");
+    }
+
+    // RemoveProduct
+    @Test
+    void shouldRemoveExistingProductFromCart(){
+        CartItem item = CartItem.builder()
+                .product(product)
+                .quantity(2)
+                .build();
+        cart.setItems(new ArrayList<>(List.of(item)));
+        when(cartRepository.findByUserId(1)).thenReturn(Optional.of(cart));
+        cartService.removeProduct(userDetails, 1);
+        assertThat(cart.getItems()).isEmpty();
+        verify(cartRepository).save(cart);
+
+    }
+
+    @Test
+    void shouldNotThrowWhenRemovingProductThatIsNotInCart(){
+        when(cartRepository.findByUserId(1)).thenReturn(Optional.of(cart));
+        cartService.removeProduct(userDetails,999);
+        assertThat(cart.getItems()).isEmpty();
+        verify(cartRepository).save(cart);
+    }
+
+    // ClearCart
+    @Test
+    void shouldRemoveAllItemsFromCart(){
+        CartItem item1 = CartItem.builder().product(product).quantity(1).build();
+        CartItem item2 = CartItem.builder().product(product).quantity(2).build();
+
+        cart.setItems(new ArrayList<>(List.of(item1,item2)));
+        when(cartRepository.findByUserId(1)).thenReturn(Optional.of(cart));
+
+        cartService.clearCart(userDetails);
+        assertThat(cart.getItems()).isEmpty();
+
+        verify(cartRepository).save(cart);
+
     }
 }
 
