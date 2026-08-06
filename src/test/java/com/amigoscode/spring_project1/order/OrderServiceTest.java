@@ -112,6 +112,16 @@ class OrderServiceTest {
         verify(productRepository, never()).save(any());
     }
 
+
+    @Test
+    void shouldThrowExceptionWhenUserHasNoCartDuringCheckout() {
+        when(cartRepository.findByUserId(1)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> orderService.checkout(userDetails))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Carrinho não encontrado");
+    }
+
     @Test
     void shouldThrowExceptionWhenCartIsEmpty() {
         cart.setItems(new ArrayList<>());
@@ -124,6 +134,54 @@ class OrderServiceTest {
         verify(orderRepository, never()).save(any());
     }
 
+
+    // GetMyOrders
+
+    @Test
+    void shouldReturnOrdersBelongingToTheUser(){
+        Order order = Order.builder()
+                .id(10)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .items(List.of())
+                .build();
+        when(orderRepository.findByUserId(1)).thenReturn(List.of(order));
+        List<OrderResponse> result = orderService.getMyOrders(userDetails);
+
+        assertThat(result).hasSize(1);
+        verify(orderMapper).toResponse(order);
+
+    }
+    // GetAllOrders
+
+    @Test
+    void shouldReturnAllOrdersRegardlessOfUser(){
+        Order order = Order.builder()
+                .id(10)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .items(List.of())
+                .build();
+        when(orderRepository.findAll()).thenReturn(List.of(order));
+        List<OrderResponse> result = orderService.getAllOrders();
+        assertThat(result).hasSize(1);
+        verify(orderMapper).toResponse(order);
+    }
+
+    //updateStatus
+    @Test
+    void shouldUpdateOrderStatus(){
+        Order order = Order.builder()
+                .id(10)
+                .user(user)
+                .status(OrderStatus.PENDING)
+                .items(List.of())
+                .build();
+        when(orderRepository.findById(10)).thenReturn(Optional.of(order));
+        orderService.updateStatus(10,OrderStatus.SHIPPED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED);
+        verify(orderRepository).save(order);
+    }
     //  CancelOrder
 
     @Test
