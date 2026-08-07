@@ -2,23 +2,27 @@ package com.amigoscode.spring_project1.product;
 
 import com.amigoscode.spring_project1.category.Category;
 import com.amigoscode.spring_project1.category.CategoryRepository;
+import com.amigoscode.spring_project1.category.CategoryResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -31,9 +35,12 @@ class ProductServiceTest {
 
     @InjectMocks
     private ProductService productService;
+    @Mock
+    private ProductMapper productMapper;
 
     private Product product;
     private Category category;
+
 
     @BeforeEach
     void setUp() {
@@ -49,6 +56,155 @@ class ProductServiceTest {
                 .price(new BigDecimal("4500.00"))
                 .category(category)
                 .build();
+    }
+    // Register
+    @Test
+    void shouldRegisterNewProductWhenCategoryExists(){
+        ProductRequest request = new ProductRequest(
+                "Mouse",
+                "Mouse sem fio",
+                1,
+                new BigDecimal("300"),
+                10,
+                "url"
+        );
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(productRepository.save(any(Product.class))).thenAnswer( invocation -> invocation.getArgument(0));
+        Product result = productService.register(request);
+
+        assertThat(result.getName()).isEqualTo("Mouse");
+        assertThat(result.getCategory()).isEqualTo(category);
+        verify(productRepository).save(any(Product.class));
+    }
+    @Test
+    void shouldThrowExceptionWhenRegisteringWithNonExistentCategory() {
+        ProductRequest request = new ProductRequest(
+                "Mouse", "Mouse sem fio", 99, new BigDecimal("50.00"), 10, "url"
+        );
+
+        when(categoryRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productService.register(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Categoria não encontrada");
+
+        verify(productRepository, never()).save(any());
+    }
+
+    // GetAllProducts
+    @Test
+    void shouldReturnAllProducts(){
+        when(productRepository.findAll()).thenReturn(List.of(product));
+        when(productMapper.toResponse(product)).thenReturn(
+                new ProductResponse(
+                        "Notebook",
+                        null,
+                        new CategoryResponse("Eletrônicos"),
+                        new BigDecimal("4500.00"),
+                        10,
+                        null)
+        );
+        List<ProductResponse> result = productService.getAllProducts();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).name()).isEqualTo("Notebook");
+    }
+
+    // GetByCategory
+
+    @Test
+     void shouldReturnProductsByCategory(){
+        when(productRepository.findByCategory_Id(1)).thenReturn(List.of(product));
+        when(productMapper.toResponse(product)).thenReturn(
+                new ProductResponse(
+                        "Notebook",
+                        null,
+                        new CategoryResponse("Eletrônicos"),
+                        new BigDecimal("4500.00"),
+                        10,
+                        null)
+        );
+        List<ProductResponse> result = productService.getByCategory(1);
+        assertThat(result).hasSize(1);
+
+    }
+    // GetProductById
+    @Test
+    void shouldReturnProductWhenIdExists(){
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(productMapper.toResponse(product)).thenReturn(
+                new ProductResponse(
+                        "Notebook",
+                        null,
+                        new CategoryResponse("Eletrônicos"),
+                        new BigDecimal("4500.00"),
+                        10,
+                        null)
+        );
+
+        ProductResponse result = productService.getProductById(1);
+        assertThat(result.name()).isEqualTo("Notebook");
+
+    }
+
+    @Test
+    void shouldThrowExceptionWhenProductByIdDoesNotExist(){
+        when(productRepository.findById(99)).thenReturn(Optional.empty());
+        assertThatThrownBy(()-> productService.getProductById(99))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Id de produto não foi achado");
+    }
+
+
+    // Update
+    @Test
+    void shouldUpdateProductWhenProductAndCategoryExist(){
+        ProductRequest request = new ProductRequest(
+                "Mouse Gamer",
+                "Mouse RBG",
+                1,
+                new BigDecimal("80.80"),
+                20,
+                "url2"
+        );
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        Product result = productService.update(1,request);
+        assertThat(result.getName()).isEqualTo("Mouse Gamer");
+        assertThat(result.getStock()).isEqualTo(20);
+    }
+    @Test
+    void shouldThrowExceptionWhenUpdatingWithNonExistentCategory(){
+        ProductRequest request= new ProductRequest(
+                "Mouse",
+                "Mouse sem fio",
+                99,
+                new BigDecimal("300.00"),
+                10,
+                "url"
+        );
+
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(categoryRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(()-> productService.update(1,request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Categoria não encontrada");
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingNonExistentProduct() {
+        ProductRequest request = new ProductRequest(
+                "Mouse", "Mouse sem fio", 1, new BigDecimal("50.00"), 10, "url"
+        );
+
+        when(productRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productService.update(99, request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Produto não encontrado");
     }
 
     // UpdateStock
@@ -85,7 +241,28 @@ class ProductServiceTest {
                 .hasMessageContaining("não encontrado");
     }
 
-// DeleteProduct
+    // Update Price
+
+    @Test
+    void shouldUpdatePriceWhenProductExists(){
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        Product result = productService.updatePrice(1, new UpdatePriceRequest(new BigDecimal("999.00")));
+
+        assertThat(result.getPrice()).isEqualByComparingTo("999.00");
+        verify(productRepository).save(product);
+    }
+    @Test
+    void shouldThrowExceptionWhenUpdatingPriceOfNonExistentProduct(){
+        when(productRepository.findById(99)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> productService.updatePrice(99, new UpdatePriceRequest(new BigDecimal("999.00"))))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("não encontrado");
+    }
+
+    // DeleteProduct
 
     @Test
     void shouldDeleteProductWhenIdExists() {
@@ -106,35 +283,37 @@ class ProductServiceTest {
         verify(productRepository, never()).deleteById(anyInt());
     }
 
-// Register
-
+    // Search
     @Test
-    void shouldThrowExceptionWhenRegisteringWithNonExistentCategory() {
-        ProductRequest request = new ProductRequest(
-                "Mouse", "Mouse sem fio", 99, new BigDecimal("50.00"), 10, "url"
+    void shouldSearchProductsWithoutAnyFilters() {
+        Page<Product> page = new PageImpl<>(List.of(product));
+        when(productRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+        when(productMapper.toResponse(product)).thenReturn(
+                new ProductResponse("Notebook", null, new CategoryResponse("Eletrônicos"), new BigDecimal("4500.00"), 10, null)
         );
 
-        when(categoryRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> productService.register(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Categoria não encontrada");
-
-        verify(productRepository, never()).save(any());
-    }
-
-// update
-
-    @Test
-    void shouldThrowExceptionWhenUpdatingNonExistentProduct() {
-        ProductRequest request = new ProductRequest(
-                "Mouse", "Mouse sem fio", 1, new BigDecimal("50.00"), 10, "url"
+        Page<ProductResponse> result = productService.search(
+                null, null, null, null, 0, 10, "name", "asc"
         );
 
-        when(productRepository.findById(99)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> productService.update(99, request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Produto não encontrado");
+        assertThat(result.getContent()).hasSize(1);
     }
+    @Test
+    void shouldSearchProductsWithAllFiltersApplied() {
+        Page<Product> page = new PageImpl<>(List.of(product));
+        when(productRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+        when(productMapper.toResponse(product)).thenReturn(
+                new ProductResponse("Notebook", null, new CategoryResponse("Eletrônicos"), new BigDecimal("4500.00"), 10, null)
+        );
+
+        Page<ProductResponse> result = productService.search(
+                "note", 1, new BigDecimal("100.00"), new BigDecimal("5000.00"), 0, 10, "price", "desc"
+        );
+
+        assertThat(result.getContent()).hasSize(1);
+    }
+
+
+
+
 }
