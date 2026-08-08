@@ -18,16 +18,19 @@ public class CategoryService {
                  .build();
          return categoryRepository.save(category);
      }
+
      public List<CategoryResponse> getAll(){
          return categoryRepository.findAll()
                  .stream()
                  .map(categoryMapper::toResponse).toList();
      }
+
      public CategoryResponse findById(int id){
          Category category = categoryRepository.findById(id)
                  .orElseThrow(()-> new RuntimeException("Categoria não encontrada"));
          return categoryMapper.toResponse(category);
      }
+
      public void  deleteCategory(int id){
          if(!categoryRepository.existsById(id)){
              throw new RuntimeException("Id de categoria inexistente");
