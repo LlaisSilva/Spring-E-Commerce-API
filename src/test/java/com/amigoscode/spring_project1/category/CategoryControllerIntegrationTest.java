@@ -64,7 +64,15 @@ public class CategoryControllerIntegrationTest {
     }
     // GetCategoryById
 
-    //@Test
+    @Test
+    void shouldGetCategoryByIdWithoutAuthentication() throws Exception{
+        Category category = categoryRepository.findAll().get(0);
+        mockMvc.perform(get("/api/v1/categories/"+category.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Eletrônicos"));
+
+
+    }
 
 
     // Delete
@@ -76,6 +84,14 @@ public class CategoryControllerIntegrationTest {
         mockMvc.perform(delete("/api/v1/categories/" + category.getId())
                         .with(user("regularUser").authorities(() -> "USER")))
                 .andExpect(status().isForbidden());
+    }
+    @Test
+    void shouldDeleteCategoryWhenUserIsAdmin() throws Exception{
+        Category category = categoryRepository.findAll().get(0);
+        mockMvc.perform(delete("/api/v1/categories/"+category.getId())
+                .with(user("admin").authorities(()-> "ADMIN")))
+                .andExpect(status().isNoContent());
+
     }
 
 
