@@ -73,6 +73,13 @@ public class CategoryControllerIntegrationTest {
 
 
     }
+    @Test
+    void shouldReturnNotFound_whenGettingNonExistentCategory() throws Exception {
+        int nonExistentId = 9999;
+
+        mockMvc.perform(get("/api/v1/categories/" + nonExistentId))
+                .andExpect(status().isNotFound());
+    }
 
 
     // Delete
@@ -92,6 +99,14 @@ public class CategoryControllerIntegrationTest {
                 .with(user("admin").authorities(()-> "ADMIN")))
                 .andExpect(status().isNoContent());
 
+    }
+    @Test
+    void shouldReturnNotFound_whenDeletingNonExistentCategoryAsAdmin() throws Exception {
+        int nonExistentId = 9999;
+
+        mockMvc.perform(delete("/api/v1/categories/" + nonExistentId)
+                        .with(user("admin").authorities(() -> "ADMIN")))
+                .andExpect(status().isNotFound());
     }
 
 
