@@ -1,5 +1,6 @@
 package com.amigoscode.spring_project1.category;
 
+import com.amigoscode.spring_project1.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +28,13 @@ public class CategoryService {
 
      public CategoryResponse findById(int id){
          Category category = categoryRepository.findById(id)
-                 .orElseThrow(()-> new RuntimeException("Categoria não encontrada"));
+                 .orElseThrow(()-> new ResourceNotFoundException("Categoria não encontrada"));
          return categoryMapper.toResponse(category);
      }
 
      public void  deleteCategory(int id){
          if(!categoryRepository.existsById(id)){
-             throw new RuntimeException("Id de categoria inexistente");
+             throw new ResourceNotFoundException("Id de categoria inexistente");
          }
          categoryRepository.deleteById(id);
      }

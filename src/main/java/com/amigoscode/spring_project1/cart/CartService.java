@@ -1,17 +1,12 @@
 package com.amigoscode.spring_project1.cart;
 
 import com.amigoscode.spring_project1.cartItem.CartItem;
-import com.amigoscode.spring_project1.cartItem.CartItemRepository;
-import com.amigoscode.spring_project1.cartItem.CartItemResponse;
-import com.amigoscode.spring_project1.category.CategoryResponse;
+import com.amigoscode.spring_project1.exception.ResourceNotFoundException;
 import com.amigoscode.spring_project1.product.Product;
 import com.amigoscode.spring_project1.product.ProductRepository;
-import com.amigoscode.spring_project1.product.ProductResponse;
 import com.amigoscode.spring_project1.user.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +28,7 @@ public class CartService {
         Cart cart = findCartByUserId(userDetails);
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
 
         CartItem existingItem = cart.getItems()
                 .stream()
@@ -101,7 +96,7 @@ public class CartService {
 
         return cartRepository.findByUserId(userDetails.getUser().getId())
                 .orElseThrow(() ->
-                        new RuntimeException("Carrinho não encontrado")
+                        new ResourceNotFoundException("Carrinho não encontrado")
                 );
     }
 

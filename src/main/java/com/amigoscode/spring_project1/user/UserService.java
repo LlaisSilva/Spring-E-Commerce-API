@@ -1,11 +1,10 @@
 package com.amigoscode.spring_project1.user;
 
-import com.amigoscode.spring_project1.auth.RegisterRequest;
+import com.amigoscode.spring_project1.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -30,7 +29,7 @@ public class UserService {
     public UserResponse getUserById(int id) {
         User user =  userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Usuário não encontrado!"));
+                        new ResourceNotFoundException("Usuário não encontrado!"));
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
@@ -41,11 +40,12 @@ public class UserService {
 
     public void deleteUserById(int id){
         if( !userRepository.existsById(id)){
-            throw new RuntimeException("Id de Usuário Invalido!");
+            throw new ResourceNotFoundException("Id de Usuário Invalido!");
         }
 
         userRepository.deleteById(id);
     }
-    //Sign in
+
+
 
 }
