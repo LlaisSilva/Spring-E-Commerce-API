@@ -2,6 +2,8 @@ package com.amigoscode.spring_project1.product;
 
 import com.amigoscode.spring_project1.category.Category;
 import com.amigoscode.spring_project1.category.CategoryRepository;
+import com.amigoscode.spring_project1.exception.InsufficientStockException;
+import com.amigoscode.spring_project1.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,7 +25,7 @@ public class ProductService {
     public Product register(ProductRequest request ){
 
         Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(()-> new RuntimeException("Categoria não encontrada"));
+                .orElseThrow(()-> new ResourceNotFoundException("Categoria não encontrada"));
         Product product = Product.builder()
                 .name(request.name())
                 .description(request.description())
@@ -48,17 +50,17 @@ public class ProductService {
     }
     public ProductResponse getProductById(int id){
         Product product = productRepository.findById(id)
-                .orElseThrow(()->new RuntimeException("Id de produto não foi achado") );
+                .orElseThrow(()->new ResourceNotFoundException("Id de produto não foi achado") );
 
         return productMapper.toResponse(product);
     }
 
     public  Product update(int id, ProductRequest request){
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
 
         Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
 
         product.setName(request.name());
         product.setDescription(request.description());
@@ -72,9 +74,9 @@ public class ProductService {
 
     public Product updateStock(int id, UpdateStockRequest request){
         Product product  = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
         if(request.stock()<0){
-            throw new RuntimeException("Estoque não pode ser negativo");
+            throw new InsufficientStockException("Estoque não pode ser negativo");
         }
         product.setStock(request.stock());
         return productRepository.save(product);
@@ -84,14 +86,14 @@ public class ProductService {
 
     public Product updatePrice(int id, UpdatePriceRequest request ){
         Product product  = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
         product.setPrice(request.price());
         return productRepository.save(product);
     }
 
     public void deleteProduct(int id){
         if(!productRepository.existsById(id)){
-            throw new RuntimeException("Id de produto inexistente inexistente");
+            throw new ResourceNotFoundException("Id de produto inexistente inexistente");
         }
         productRepository.deleteById(id);
     }

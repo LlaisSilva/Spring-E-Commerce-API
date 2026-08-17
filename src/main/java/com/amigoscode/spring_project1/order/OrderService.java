@@ -3,6 +3,7 @@ package com.amigoscode.spring_project1.order;
 import com.amigoscode.spring_project1.cart.Cart;
 import com.amigoscode.spring_project1.cart.CartRepository;
 import com.amigoscode.spring_project1.cartItem.CartItem;
+import com.amigoscode.spring_project1.exception.*;
 import com.amigoscode.spring_project1.orderItem.OrderItem;
 import com.amigoscode.spring_project1.product.Product;
 import com.amigoscode.spring_project1.product.ProductRepository;
@@ -29,13 +30,13 @@ public class OrderService {
         Cart cart = findCartByUser(userDetails);
 
         if(cart.getItems().isEmpty()){
-            throw new RuntimeException("Carrinho vazio");
+            throw new EmptyCartException("Carrinho vazio");
         }
 
         for(CartItem cartItem: cart.getItems()){
             Product product = cartItem.getProduct();
             if(product.getStock()< cartItem.getQuantity())
-                throw new RuntimeException("Estoque insuficiente para o produto: "+product.getName());
+                throw new InsufficientStockException("Estoque insuficiente para o produto: "+product.getName());
 
         }
         Order order = Order.builder()
@@ -116,7 +117,7 @@ public class OrderService {
         Order order = findOrderById(orderId);
         validateOrderOwner(order,userDetails);
         if(order.getStatus() == OrderStatus.CANCELLED){
-            throw new RuntimeException("Pedido já está cancelado");
+            throw new ResourceConflictException("Pedido já está cancelado");
 
         }
 
@@ -135,7 +136,7 @@ public class OrderService {
     private Cart findCartByUser(CustomUserDetails userDetails){
         return cartRepository.findByUserId(userDetails.getUser().getId())
                 .orElseThrow(() ->
-                        new RuntimeException("Carrinho não encontrado")
+                        new ResourceNotFoundException("Carrinho não encontrado")
                 );
     }
 
@@ -143,16 +144,16 @@ public class OrderService {
     private Order findOrderById(int orderId){
         return orderRepository.findById(orderId)
                 .orElseThrow(() ->
-                        new RuntimeException("Pedido não encontrado")
+                        new ResourceNotFoundException("Pedido não encontrado")
                 );
     }
 
 
     private void validateOrderOwner(Order order, CustomUserDetails userDetails){
         if(order.getUser().getId() != userDetails.getUser().getId()){
-            throw new RuntimeException(
-                    "Pedido não pertence ao usuário"
-            );
+            throw new ForbiddenAccessException("Pedido não pertence ao usuário");
+
+
         }
     }
 
